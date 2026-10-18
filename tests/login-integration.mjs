@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+const base=process.argv[2]||'http://127.0.0.1:5173';
+assert.ok(base.startsWith('http://127.0.0.1:'),'Use only a disposable localhost database.');
+const send=async(body,cookie,origin=base)=>{const r=await fetch(base+'/api/auth',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:JSON.stringify(body)});return {status:r.status,cookie:r.headers.get('set-cookie'),body:await r.json()};};
+const account={email:'kibalama.victor@gmail.com',password:'Synthetic-test-password-only-987'};
+assert.equal((await send({action:'setup',...account,setupToken:'wrong',confirmPassword:account.password})).status,403);
+assert.equal((await send({action:'login',...account},null,'https://other.example')).status,403);
+const setup=await send({action:'setup',...account,setupToken:'local-test-token-only',confirmPassword:account.password});assert.equal(setup.status,200);assert.ok(setup.cookie.includes('HttpOnly'));assert.ok(setup.cookie.includes('Secure'));assert.ok(setup.cookie.includes('SameSite=Strict'));
+const cookie=setup.cookie.split(';')[0];assert.equal((await fetch(base+'/api/passes',{headers:{Cookie:cookie}})).status,200);
+assert.equal((await send({action:'setup',...account,setupToken:'local-test-token-only',confirmPassword:account.password})).status,409);
+assert.equal((await send({action:'logout'},cookie)).status,200);assert.equal((await fetch(base+'/api/passes',{headers:{Cookie:cookie}})).status,401);
+assert.equal((await send({action:'login',...account,password:'incorrect'})).status,401);
+assert.equal((await send({action:'login',...account})).status,200);
+let limited=false;for(let i=0;i<9;i++)if((await send({action:'login',...account,password:'incorrect'})).status===429)limited=true;assert.ok(limited);
+assert.equal((await fetch(base+'/api/passes',{headers:{'oai-authenticated-user-id':'fake','oai-authenticated-user-email':account.email}})).status,401);
+console.log('PASS: protected setup, password login, session access, one-time setup, logout revocation, origin checks, login limits and forged identity rejection.');

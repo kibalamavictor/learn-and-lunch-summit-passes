@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "learn-and-lunch-summit-passes",
+  "main": "worker.ts",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist/client"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "summit-passes",
+      "database_id": "022296f4-e787-49cd-afb9-1636aa0f7f75",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "vars": {
+    "STAFF_EMAILS": "kibalama.victor@gmail.com"
+  },
+  "account_id": "cc1bdbe94d30c33120556b622a3fe263"
+}

@@ -1,0 +1,1 @@
+export function verifyAccessToken(token:string|null|undefined,teamDomain:string|undefined,audience:string|undefined,keySet?:any):Promise<{userId:string,email:string,displayName:string,fullName:null}|null>;
