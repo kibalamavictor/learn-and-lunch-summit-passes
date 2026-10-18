@@ -70,7 +70,7 @@ Guest pages render locally. Staff actions require a database-backed login; there
 
 ## Free-tier scope and operation
 
-Select free plans only. Cloudflare Workers and D1 have daily request, CPU, read/write and storage allowances; monitor usage before and during the event. This small 312-person event is designed for modest usage, but no hosting provider offers unlimited free traffic. There is no paid email dependency in the lunch flow.
+Select free plans only. Cloudflare Workers and D1 have daily request, CPU, read/write and storage allowances; monitor usage before and during the event. This small summit event is designed for modest usage, but no hosting provider offers unlimited free traffic. There is no paid email dependency in the lunch flow.
 
 The app needs internet connectivity at the registrar and meal line. Guests can reopen the original link or tap Refresh pass. Pending entry pages check for attendance changes every 10 seconds while visible and stop automatic checks after activation. A saved entry screenshot does not update into a lunch pass.
 
@@ -82,4 +82,14 @@ Official references:
 
 ## Checks performed on this edition
 
-See `HANDOFF.md` for the actual checks completed before handoff. Live Cloudflare account provisioning, Access policy setup, participant migration and email delivery require your account and are not performed by the source export.
+See `HANDOFF.md` for the actual checks completed before handoff. The live Cloudflare deployment uses built-in staff password login. Participant data and credentials are stored outside Git.
+
+## Acceptance emails (Zoho CPaaS)
+
+Open **Acceptance emails** in the staff dashboard. Preview the message, send a test to your own mailbox, review it, then send unsent invitations. Imports never trigger email automatically. Each message has one recipient, a private entry link, the official poster link, event details, ID reminder and visiting-student bag notice. Open/click tracking are disabled.
+
+Store the existing agent Send API key as the encrypted Cloudflare secret `ZOHO_SEND_KEY` (never in Git, a CSV or a browser-visible variable). The sender is Operations At Learn And Lunch <operations@learnandlunch.org>. This integration uses Zoho's transactional sending API at https://cpaas.zoho.com/v1.1/email. Only send registration confirmations to the summit applicants; this is not a marketing sender.
+
+Sending uses resumable batches of five. A database claim prevents concurrent duplicate sends. Accepted messages are never resent automatically. Rejected sends can be retried explicitly. Connection failures or ambiguous responses are marked uncertain; review Zoho logs before deciding what to do. A `sending` record left by an interrupted worker likewise needs manual review. “Accepted” means Zoho accepted the request, not that it reached an inbox. Use Zoho delivery reports for delivery and bounce status. Keep the dashboard open during a sending run.
+
+Run `node tests/invitations.mjs` to check content escaping, privacy settings, concurrent-send protection and failure/retry behavior against an in-memory database and simulated provider. No real email is sent by the tests.

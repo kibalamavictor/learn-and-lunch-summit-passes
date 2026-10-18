@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {DatabaseSync} from 'node:sqlite';
+import ts from 'typescript';
+import {invitation,POSTER_URL} from '../lib/invitation.mjs';
+const preview=invitation({name:'Amina <script>alert(1)</script>',token:'a'.repeat(48),origin:'https://example.org'});
+assert.ok(preview.textbody.startsWith('Dear Amina,'));
+for(const required of [POSTER_URL,'university student ID','other than KIU','do not bring a bag','Wednesday, 21 October 2026','redeemed once'])assert.ok(preview.textbody.includes(required));
+assert.ok(!preview.htmlbody.includes('<script>'));assert.ok(preview.htmlbody.includes('View My Personal Gate Pass'));assert.equal(preview.passUrl,'https://example.org/pass/'+'a'.repeat(48));
+const malicious=invitation({name:'<img/src=x/onerror=alert(1)>',token:'x',origin:'https://example.org'});assert.ok(!malicious.htmlbody.includes('<img/src=x'));
+const sql=new DatabaseSync(':memory:');sql.exec(await readFile(new URL('../drizzle/0004_square_monster_badoon.sql',import.meta.url),'utf8'));
+const db={prepare(query){let params=[];return {bind(...args){params=args;return this;},async first(){return sql.prepare(query).get(...params)||null;},async run(){return sql.prepare(query).run(...params);}};}};
+globalThis.__invitationTest={env:{ZOHO_SEND_KEY:'synthetic-key-not-valid'},db};
+let code=await readFile(new URL('../lib/invitation-delivery.ts',import.meta.url),'utf8');
+code=code.replace("import {env} from 'cloudflare:workers';","const {env}=globalThis.__invitationTest;").replace("import {database} from './passes';","const database=()=>globalThis.__invitationTest.db;").replace("'./invitation.mjs'",JSON.stringify(new URL('../lib/invitation.mjs',import.meta.url).href));
+const compiled=ts.transpileModule(code,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext}}).outputText;
+const {deliver}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
+const realFetch=globalThis.fetch;let requests=[];
+try{
+ globalThis.fetch=async(url,options)=>{assert.equal(url,'https://cpaas.zoho.com/v1.1/email');requests.push(JSON.parse(options.body));await new Promise(r=>setTimeout(r,5));return Response.json({data:[{code:'EM_104'}],request_id:'synthetic-reference'});};
+ const guest={id:'synthetic-guest',name:'Amina Example',email:'amina@example.invalid',token:'b'.repeat(48)};
+ const concurrent=await Promise.all(Array.from({length:12},()=>deliver(guest,'staff@example.invalid')));
+ assert.equal(concurrent.filter(s=>s==='accepted').length,1);assert.equal(requests.length,1);
+ assert.equal(requests[0].to.length,1);assert.equal(requests[0].to[0].email_address.address,guest.email);assert.equal(requests[0].track_clicks,false);assert.equal(requests[0].track_opens,false);assert.equal(requests[0].bcc,undefined);
+ assert.equal(await deliver(guest,'staff@example.invalid',false,true),'skipped');
+ globalThis.fetch=async()=>{throw Error('simulated connection loss');};
+ assert.equal(await deliver({...guest,id:'uncertain'},'staff@example.invalid'),'uncertain');
+ assert.equal(await deliver({...guest,id:'uncertain'},'staff@example.invalid',false,true),'skipped');
+ globalThis.fetch=async()=>Response.json({message:'rejected'},{status:400});
+ assert.equal(await deliver({...guest,id:'rejected'},'staff@example.invalid'),'failed');
+ globalThis.fetch=async()=>Response.json({data:[{code:'EM_104'}]});
+ assert.equal(await deliver({...guest,id:'rejected'},'staff@example.invalid',false,true),'accepted');
+ assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM invitation_deliveries').get().n,3);
+ console.log('PASS: required email content, safe HTML, one private recipient, tracking disabled, concurrent duplicate protection, accepted-send protection, uncertain-send protection and explicit rejected-send retry.');
+}finally{globalThis.fetch=realFetch;delete globalThis.__invitationTest;sql.close();}

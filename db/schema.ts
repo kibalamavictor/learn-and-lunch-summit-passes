@@ -17,3 +17,8 @@ export const mailOutbox = sqliteTable('mail_outbox', { id:text('id').primaryKey(
 export const staffUsers=sqliteTable('staff_users',{id:text('id').primaryKey(),email:text('email').notNull().unique(),passwordHash:text('password_hash').notNull(),salt:text('salt').notNull(),singleton:integer('singleton').notNull().unique()});
 export const staffSessions=sqliteTable('staff_sessions',{tokenHash:text('token_hash').primaryKey(),userId:text('user_id').notNull(),expires:integer('expires').notNull()});
 export const loginLimits=sqliteTable('login_limits',{key:text('key').primaryKey(),bucket:integer('bucket').notNull(),attempts:integer('attempts').notNull()});
+export const invitationDeliveries=sqliteTable('invitation_deliveries',{
+  passId:text('pass_id').primaryKey(), email:text('email').notNull(), status:text('status').notNull(),
+  created:text('created').notNull(), updated:text('updated').notNull(), providerId:text('provider_id'),
+  error:text('error'), version:text('version').notNull(), staff:text('staff').notNull(),
+});
