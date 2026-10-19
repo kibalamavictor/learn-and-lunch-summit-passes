@@ -7,7 +7,7 @@
 - GitHub CLI connected as `kibalamavictor`; local Git uses its credential helper.
 - Approved Cloudflare account: `cc1bdbe94d30c33120556b622a3fe263`.
 - D1 database: `summit-passes`, ID `022296f4-e787-49cd-afb9-1636aa0f7f75`.
-- All five schema migrations applied, including the private invitation sending ledger.
+- All six schema migrations applied, including the private invitation sending ledger.
 - Worker: `learn-and-lunch-summit-passes`.
 - URL: https://learn-and-lunch-summit-passes.learnandlunch.workers.dev
 - Built-in staff password login replaces Cloudflare Access. No Access subscription or billing authorization was activated.
@@ -17,3 +17,5 @@
 - Existing hosted Site unchanged.
 
 - Acceptance-email preview, test review and resumable individual sending are deployed. Sending requires the encrypted `ZOHO_SEND_KEY` secret. Delivery and bounce reports remain in Zoho.
+
+- One-time reminder scheduled server-side for 20 October 2026, 09:12 Uganda time. The private D1 job is the source of truth for recipient count and status.

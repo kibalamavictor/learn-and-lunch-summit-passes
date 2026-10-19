@@ -8,7 +8,8 @@ const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache
 async function summary(owner:string){
  const result=await database().prepare("SELECT p.id,p.name,p.email,p.contact_issue AS contactIssue,d.status,d.updated,d.provider_id AS providerId,d.error FROM passes p LEFT JOIN invitation_deliveries d ON d.pass_id=p.id WHERE p.owner=? AND p.demo=0 ORDER BY p.name COLLATE NOCASE").bind(owner).all();
  const test=await database().prepare("SELECT value FROM event_settings WHERE key='invitation_test_reviewed'").first<{value:string}>();
- return {guests:result.results,connected:!!env.ZOHO_SEND_KEY,testReviewed:test?.value===INVITATION_VERSION,sender:SENDER};
+ const reminderJob=await database().prepare('SELECT scheduled_at AS scheduledAt,status,recipient_count AS recipientCount,error FROM scheduled_mail_jobs ORDER BY created DESC LIMIT 1').first();
+ return {guests:result.results,connected:!!env.ZOHO_SEND_KEY,testReviewed:test?.value===INVITATION_VERSION,sender:SENDER,reminderJob};
 }
 export async function GET(){const user=await getStaff();if(!user)return json({error:'Staff sign-in required.'},401);return json(await summary(user.eventOwner));}
 export async function POST(request:Request){

@@ -36,6 +36,13 @@
       "when": 1792360071324,
       "tag": "0004_square_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792389767778,
+      "tag": "0005_puzzling_micromax",
+      "breakpoints": true
     }
   ]
 }

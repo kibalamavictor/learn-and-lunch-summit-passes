@@ -1,7 +1,7 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
 type Guest={id:string;name:string;email:string;contactIssue:number;status:string|null;updated:string|null;error:string|null};
-type State={guests:Guest[];connected:boolean;testReviewed:boolean;sender:{name:string;address:string}};
+type State={guests:Guest[];connected:boolean;testReviewed:boolean;sender:{name:string;address:string};reminderJob?:{scheduledAt:string;status:string;recipientCount:number;error:string|null}|null};
 export default function Invitations(){
  const [data,setData]=useState<State|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState(''),[busy,setBusy]=useState(false),[running,setRunning]=useState(false),[preview,setPreview]=useState<{htmlbody:string;subject:string}|null>(null),[testEmail,setTestEmail]=useState('operations@learnandlunch.org');
  const stop=useRef(false);
@@ -13,6 +13,7 @@ export default function Invitations(){
  async function send(retry=false){stop.current=false;setRunning(true);setError('');setNotice('');try{while(!stop.current){const j=await request({action:retry?'retry-failed':'send-next'});setData(j);if(j.stopped){setError('Sending paused after a delivery problem. Review the record and Zoho logs before continuing.');break;}if(!j.processed){setNotice('Sending run complete. Accepted means Zoho received the email; delivery and bounces are shown in Zoho.');break;}}}catch(e:any){setError(e.message);}finally{setRunning(false);await load();}}
  return <section className="card register"><div className="section-title"><div><h2>Acceptance emails</h2><p>One private invitation for each registered guest.</p></div><button className="secondary" disabled={busy||running} onClick={load}>Refresh status</button></div><div style={{padding:24}}>
  <p><strong>From:</strong> Operations At Learn And Lunch &lt;operations@learnandlunch.org&gt;</p><p>Each email includes acceptance, event details, a personal gate pass, the poster link, university ID reminder and the no-bags notice for students from other universities.</p>
+ {data?.reminderJob&&<div className="notice success"><div><strong>Summit reminder · {data.reminderJob.status==='pending'?'Scheduled':data.reminderJob.status}</strong><p>{new Date(data.reminderJob.scheduledAt).toLocaleString('en-GB',{timeZone:'Africa/Kampala',dateStyle:'full',timeStyle:'short'})} · Uganda time · {data.reminderJob.recipientCount} guests. Addresses with delivery problems are excluded.</p>{data.reminderJob.error&&<p>{data.reminderJob.error}</p>}</div></div>}
  <p><strong>{accepted}</strong> accepted by Zoho · <strong>{pending}</strong> not sent · <strong>{failed}</strong> rejected · <strong>{uncertain}</strong> need review · <strong>{guests.filter(g=>g.contactIssue).length}</strong> invalid contacts</p>
  {!data?.connected&&<p role="alert" className="notice error">Zoho sending key is not connected. Preview is available; no guest emails can be sent yet.</p>}
  {error&&<p role="alert" className="notice error">{error}</p>}{notice&&<p role="status" className="notice success">{notice}</p>}

@@ -93,3 +93,9 @@ Store the existing agent Send API key as the encrypted Cloudflare secret `ZOHO_S
 Sending uses resumable batches of five. A database claim prevents concurrent duplicate sends. Accepted messages are never resent automatically. Rejected sends can be retried explicitly. Connection failures or ambiguous responses are marked uncertain; review Zoho logs before deciding what to do. A `sending` record left by an interrupted worker likewise needs manual review. “Accepted” means Zoho accepted the request, not that it reached an inbox. Use Zoho delivery reports for delivery and bounce status. Keep the dashboard open during a sending run.
 
 Run `node tests/invitations.mjs` to check content escaping, privacy settings, concurrent-send protection and failure/retry behavior against an in-memory database and simulated provider. No real email is sent by the tests.
+
+## One-time summit reminder
+
+The Worker has a scheduled handler for the 20 October 2026 reminder at 09:12 Africa/Kampala (06:12 UTC). The date-specific job in D1 contains the approved recipient IDs; no recipient list is committed. At runtime it rechecks that each original invitation was accepted, has no recorded delivery issue, and still matches the guest email. The handler uses Zoho's transactional batch API with separate per-recipient merge fields, tracking disabled and no CC/BCC. An atomic job claim prevents repeat sends. A failed or uncertain provider response is recorded for manual review, never automatically resent. Although the cron expression is annual, the handler checks the exact 2026 timestamp and a pending job, so it cannot send annually.
+
+The staff Acceptance emails section displays the scheduled time, recipient count and result. The reminder's wording is in `lib/reminder.mjs`. Run `node tests/reminder.mjs` for date, duplicate, privacy and eligibility checks using synthetic records; the test sends no real mail.

@@ -22,3 +22,8 @@ export const invitationDeliveries=sqliteTable('invitation_deliveries',{
   created:text('created').notNull(), updated:text('updated').notNull(), providerId:text('provider_id'),
   error:text('error'), version:text('version').notNull(), staff:text('staff').notNull(),
 });
+export const scheduledMailJobs=sqliteTable('scheduled_mail_jobs',{
+ id:text('id').primaryKey(),scheduledAt:text('scheduled_at').notNull(),status:text('status').notNull(),
+ recipientIds:text('recipient_ids').notNull(),recipientCount:integer('recipient_count').notNull(),
+ created:text('created').notNull(),started:text('started'),finished:text('finished'),providerId:text('provider_id'),error:text('error'),
+});
